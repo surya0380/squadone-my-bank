@@ -11,7 +11,7 @@ import {
 import ForgotAccess from "../components/ForgotPassword";
 import ForgotCustomerId from "../components/ForgotPassword";
 import CustomSnackbar from "../components/CustomSnackbar";
-import AccountSummary from "../components/AccountSummary/AccountSummary";
+import AccountSummary from "./AccountSummary/AccountSummary";
 
 const validCustomerIds = ["12345", "67890", "11111", "22222"]; // Example valid IDs
 // Using an object
