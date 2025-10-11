@@ -11,6 +11,7 @@ import {
 import ForgotAccess from "../components/ForgotPassword";
 import ForgotCustomerId from "../components/ForgotPassword";
 import CustomSnackbar from "../components/CustomSnackbar";
+import AccountSummary from "../components/AccountSummary/AccountSummary";
 
 const validCustomerIds = ["12345", "67890", "11111", "22222"]; // Example valid IDs
 // Using an object
@@ -63,6 +64,7 @@ const Login: React.FC = () => {
   const [forgotMode, setForgotMode] = useState<
     "customerId" | "password" | null
   >(null);
+   const[showSummary,setShowSummary] = useState(false)
 
   // Set webpage title
   useEffect(() => {
@@ -103,7 +105,7 @@ const Login: React.FC = () => {
         setLoading(false);
         setSnackbarMessage(`Login successful! Welcome ${customer.Name}`);
         setSnackbarOpen(true);
-
+        setShowSummary(true)
         // Reset form
         setCustomerId("");
         setPassword("");
@@ -126,7 +128,8 @@ const Login: React.FC = () => {
   }
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "#e3f2fd", width: "100vw" }}>
+    <div>
+    {!showSummary? <Box sx={{ minHeight: "100vh", bgcolor: "#e3f2fd", width: "100vw" }}>
       {/* Header */}
       <Box
         sx={{
@@ -254,7 +257,9 @@ const Login: React.FC = () => {
         message={snackbarMessage}
         severity="success"
       />
-    </Box>
+    </Box>:""}
+   {showSummary? <AccountSummary/>:""}
+    </div>
   );
 };
 
