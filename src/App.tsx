@@ -1,12 +1,11 @@
-import './App.css'
+import './App.css';
+import Login from './pages/Login';
 
 function App() {
 
   return (
     <>
-      <div>
-        MY BANK
-      </div>
+        <Login />
     </>
   )
 }
