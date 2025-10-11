@@ -3,14 +3,22 @@ import {
   Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, Typography, Link
 } from '@mui/material';
+import { useState } from 'react';
 
 const rows = [
-  { name: '', type: '', accountNo: '', balance: '' },
-  { name: '', type: '', accountNo: '', balance: '' },
-  { name: '', type: '', accountNo: '', balance: '' },
+  { name: 'Mybank1', type: 'current', accountNo: '123456', balance: '100000' },
+  { name: 'Mybank2', type: 'savings', accountNo: '678901', balance: '200000' },
+  { name: 'Mybank3', type: 'Joint', accountNo: '2345678', balance: '300000' },
 ];
 
+
+
 export default function BankAccountSummary() {
+  const[showAcctDetails,setShowAcctDetails] = useState(false);
+
+  function onViewClick(){
+  setShowAcctDetails(true)
+}
   return (
     <Paper
       sx={{
@@ -48,7 +56,7 @@ export default function BankAccountSummary() {
                 <TableCell>{row.accountNo}</TableCell>
                 <TableCell>{row.balance}</TableCell>
                 <TableCell align="right">
-                  <Link href="#" underline="none">View</Link>
+                  <Link href="#" underline="none" onClick={onViewClick}>View</Link>
                 </TableCell>
               </TableRow>
             ))}
