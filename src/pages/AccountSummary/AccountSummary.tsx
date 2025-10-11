@@ -3,8 +3,7 @@ import {
   Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, Typography, Link
 } from '@mui/material';
-import { useState,useContext } from 'react';
-import {AccountsummaryContext} from "./AccountSummaryContext";
+import { useState } from 'react';
 
 
 const rows = [
@@ -16,8 +15,8 @@ const rows = [
 
 
 export default function BankAccountSummary() {
-  //const[showAcctDetails,setShowAcctDetails] = useState(false);
-  const {showAcctDetails,setShowAcctDetails} = useContext(AccountsummaryContext)
+  const[showAcctDetails,setShowAcctDetails] = useState(false);
+  //const {showAcctDetails,setShowAcctDetails} = useContext(AccountsummaryContext)
 
   function onViewClick(){
   setShowAcctDetails(true)

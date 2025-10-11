@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   Box,
   Paper,
@@ -12,6 +12,7 @@ import ForgotAccess from "../components/ForgotPassword";
 import ForgotCustomerId from "../components/ForgotPassword";
 import CustomSnackbar from "../components/CustomSnackbar";
 import AccountSummary from "./AccountSummary/AccountSummary";
+import Registration from "./Registration/Registration"
 
 const validCustomerIds = ["12345", "67890", "11111", "22222"]; // Example valid IDs
 // Using an object
@@ -65,6 +66,7 @@ const Login: React.FC = () => {
     "customerId" | "password" | null
   >(null);
    const[showSummary,setShowSummary] = useState(false)
+   const [showRegister,setshowRegister] = useState(false)
 
   // Set webpage title
   useEffect(() => {
@@ -127,9 +129,13 @@ const Login: React.FC = () => {
     );
   }
 
+  function handleRegister()
+{
+setshowRegister(true)
+}
   return (
     <div>
-    {!showSummary? <Box sx={{ minHeight: "100vh", bgcolor: "#e3f2fd", width: "100vw" }}>
+    {!showSummary && !showRegister? <Box sx={{ minHeight: "100vh", bgcolor: "#e3f2fd", width: "100vw" }}>
       {/* Header */}
       <Box
         sx={{
@@ -244,6 +250,7 @@ const Login: React.FC = () => {
                   >
                     Register Now
                   </Typography>
+                  onClick={handleRegister}
                 </Button>
               </Box>
             </form>
@@ -258,7 +265,8 @@ const Login: React.FC = () => {
         severity="success"
       />
     </Box>:""}
-   {showSummary? <AccountSummary/>:""}
+   {(showSummary && !showRegister)? <AccountSummary/>:""}
+   {(showRegister && !showSummary) ? <Registration/>:""}
     </div>
   );
 };
