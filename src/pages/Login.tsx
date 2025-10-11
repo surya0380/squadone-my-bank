@@ -236,7 +236,8 @@ setshowRegister(true)
               <Box display="flex" justifyContent="flex-start" mt={2}>
                 <Button
                   variant="text"
-                  sx={{ textTransform: "none", fontSize: 14, padding: 0 }}
+                    sx={{ textTransform: "none", fontSize: 14, padding: 0 }}
+                    onClick={handleRegister}
                 >
                   <Typography
                     component="span"
@@ -250,7 +251,6 @@ setshowRegister(true)
                   >
                     Register Now
                   </Typography>
-                  onClick={handleRegister}
                 </Button>
               </Box>
             </form>
