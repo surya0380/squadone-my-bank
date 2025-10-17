@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import './FundTransfer.css';
 import { otpService } from '../services/otpService';
+import { AccessTime, Warning, Error } from '@mui/icons-material';
+import { Snackbar, Alert } from '@mui/material';
 
 
 interface TransferFormData {
@@ -100,11 +102,32 @@ const FundTransfer: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [demoOTP, setDemoOTP] = useState('');
+    const [beneficiaries, setBeneficiaries] = useState<Array<{ accountNumber: string; name: string }>>([]);
+    const [otpTimer, setOtpTimer] = useState(300); // 5 minutes in seconds
+    const [isOtpExpired, setIsOtpExpired] = useState(false);
+    const [toastOpen, setToastOpen] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
 
     const steps = ['Transfer Details', 'OTP Verification', 'Confirmation'];
 
     const watchedAccountNumber = watchTransfer('accountNumber');
 
+    // Fetch beneficiaries on component mount
+    useEffect(() => {
+        const loadBeneficiaries = async () => {
+            // Simulate API call with small delay
+            await new Promise(resolve => setTimeout(resolve, 300));
+            const allBeneficiaries = otpService.getAllBeneficiaries();
+            setBeneficiaries(allBeneficiaries.map(b => ({
+                accountNumber: b.accountNumber,
+                name: b.name
+            })));
+        };
+
+        loadBeneficiaries();
+    }, []);
+
+    // Auto-fill beneficiary name when account is selected
     useEffect(() => {
         if (watchedAccountNumber && watchedAccountNumber.length >= 10) {
             const beneficiary = otpService.getBeneficiary(watchedAccountNumber);
@@ -116,6 +139,29 @@ const FundTransfer: React.FC = () => {
         }
     }, [watchedAccountNumber, setTransferValue]);
 
+    // OTP Timer countdown effect
+    useEffect(() => {
+        let interval: number;
+
+        if (activeStep === 1 && otpTimer > 0 && !isOtpExpired) {
+            interval = window.setInterval(() => {
+                setOtpTimer((prevTimer) => {
+                    if (prevTimer <= 1) {
+                        setIsOtpExpired(true);
+                        return 0;
+                    }
+                    return prevTimer - 1;
+                });
+            }, 1000);
+        }
+
+        return () => {
+            if (interval) {
+                window.clearInterval(interval);
+            }
+        };
+    }, [activeStep, otpTimer, isOtpExpired]);
+
     const onTransferSubmit: SubmitHandler<TransferFormData> = async (data) => {
         setLoading(true);
         try {
@@ -125,9 +171,13 @@ const FundTransfer: React.FC = () => {
                 setDemoOTP(response.demoOTP || '');
                 setActiveStep(1);
                 setError('');
+                // Start the timer when OTP is sent
+                setOtpTimer(300);
+                setIsOtpExpired(false);
 
                 if (response.demoOTP) {
-                    alert(`API Failed (CORS/Network Error)\n\nFor Demo Purpose, Your OTP is: ${response.demoOTP}\n\nNote: Check Network tab to see the API call was attempted.`);
+                    setToastMessage(`API call failed - Demo OTP: ${response.demoOTP}`);
+                    setToastOpen(true);
                 }
             } else {
                 setError(response.error || 'Failed to send OTP');
@@ -168,9 +218,13 @@ const FundTransfer: React.FC = () => {
             if (response.success) {
                 setDemoOTP(response.demoOTP || '');
                 setError('');
+                // Reset timer when new OTP is sent
+                setOtpTimer(300);
+                setIsOtpExpired(false);
 
                 if (response.demoOTP) {
-                    alert(`API Failed (CORS/Network Error)\n\nFor Demo Purpose, Your New OTP is: ${response.demoOTP}\n\nNote: Check Network tab to see the API call was attempted.`);
+                    setToastMessage(`API call failed - New OTP: ${response.demoOTP}`);
+                    setToastOpen(true);
                 }
             } else {
                 setError(response.error || 'Failed to resend OTP');
@@ -182,25 +236,50 @@ const FundTransfer: React.FC = () => {
         }
     };
 
+    // Format timer for display (MM:SS)
+    const formatTimer = (seconds: number) => {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    };
+
+    const handleToastClose = (event?: React.SyntheticEvent | Event, reason?: string) => {
+        if (reason === 'clickaway') {
+            return;
+        }
+        setToastOpen(false);
+    };
+
     const handleTransferComplete = () => {
         resetTransferForm();
         resetOTPForm();
         setActiveStep(0);
         setError('');
         setDemoOTP('');
+        setOtpTimer(300);
+        setIsOtpExpired(false);
+        setToastOpen(false);
     };
 
     const renderTransferForm = () => (
         <form onSubmit={handleTransferSubmit(onTransferSubmit)} className="transfer-form">
             <div className="input-group">
                 <label htmlFor="accountNumber">Transfer Fund To *</label>
-                <input
-                    id="accountNumber"
-                    type="text"
-                    {...registerTransfer('accountNumber', VALIDATION_RULES.accountNumber)}
-                    placeholder="Enter account number"
-                    className={transferErrors.accountNumber ? 'error' : ''}
-                />
+                <div className="select-wrapper">
+                    <select
+                        id="accountNumber"
+                        {...registerTransfer('accountNumber', VALIDATION_RULES.accountNumber)}
+                        className={`custom-select ${transferErrors.accountNumber ? 'error' : ''}`}
+                    >
+                        <option value="">Select beneficiary account</option>
+                        {beneficiaries.map((beneficiary) => (
+                            <option key={beneficiary.accountNumber} value={beneficiary.accountNumber}>
+                                {beneficiary.accountNumber}
+                            </option>
+                        ))}
+                    </select>
+                    <div className="select-arrow">▼</div>
+                </div>
                 {transferErrors.accountNumber && (
                     <span className="field-error">{transferErrors.accountNumber.message}</span>
                 )}
@@ -212,7 +291,7 @@ const FundTransfer: React.FC = () => {
                     id="beneficiaryName"
                     type="text"
                     {...registerTransfer('beneficiaryName')}
-                    placeholder="Auto-filled from beneficiary list"
+                    placeholder="Beneficiary name"
                 />
             </div>
 
@@ -244,21 +323,23 @@ const FundTransfer: React.FC = () => {
             <div className="otp-section">
                 <h3>Send OTP through</h3>
                 <div className="radio-group">
-                    <label>
+                    <label htmlFor="otp-sms">
                         <input
+                            id="otp-sms"
                             type="radio"
                             value="sms"
                             {...registerTransfer('otpMethod')}
                         />
-                        SMS
+                        <span>SMS</span>
                     </label>
-                    <label>
+                    <label htmlFor="otp-email">
                         <input
+                            id="otp-email"
                             type="radio"
                             value="email"
                             {...registerTransfer('otpMethod')}
                         />
-                        Email
+                        <span>Email</span>
                     </label>
                 </div>
             </div>
@@ -281,6 +362,17 @@ const FundTransfer: React.FC = () => {
                 <div className="otp-icon">🔐</div>
                 <h3>OTP sent to your {transferData.otpMethod === 'sms' ? 'phone' : 'email'}</h3>
                 <p>Enter the 6-digit code to complete your transfer</p>
+
+                {/* OTP Timer Display */}
+                <div className={`otp-timer ${otpTimer <= 60 ? 'timer-warning' : ''} ${isOtpExpired ? 'timer-expired' : ''}`}>
+                    {isOtpExpired ? (
+                        <span><Error className="timer-icon" /> OTP Expired - Please request a new OTP</span>
+                    ) : otpTimer <= 60 ? (
+                        <span><Warning className="timer-icon" /> OTP expires in: {formatTimer(otpTimer)}</span>
+                    ) : (
+                        <span><AccessTime className="timer-icon" /> OTP expires in: {formatTimer(otpTimer)}</span>
+                    )}
+                </div>
 
                 {demoOTP && (
                     <div className="demo-otp-display">
@@ -326,7 +418,7 @@ const FundTransfer: React.FC = () => {
                     <button
                         type="submit"
                         className="btn-primary"
-                        disabled={loading || !isOTPValid}
+                        disabled={loading || !isOTPValid || isOtpExpired}
                     >
                         {loading ? 'Verifying...' : 'Verify & Transfer'}
                     </button>
@@ -390,6 +482,23 @@ const FundTransfer: React.FC = () => {
                     {activeStep === 2 && renderSuccess()}
                 </div>
             </div>
+
+            {/* Professional Toast Notification */}
+            <Snackbar
+                open={toastOpen}
+                autoHideDuration={8000}
+                onClose={handleToastClose}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert
+                    onClose={handleToastClose}
+                    severity="error"
+                    variant="outlined"
+                    className="professional-toast"
+                >
+                    {toastMessage}
+                </Alert>
+            </Snackbar>
         </div>
     );
 };
