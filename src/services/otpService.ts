@@ -46,7 +46,7 @@ const DEFAULT_BENEFICIARIES: Beneficiary[] = [
     },
     {
         accountNumber: "1234567890",
-        name: "Demo User",
+        name: "Anushka Sahoo",
         mobile: "+919876543210",
         email: "demo@mybank.com"
     }
